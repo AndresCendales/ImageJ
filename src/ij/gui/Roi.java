@@ -5,10 +5,8 @@ import ij.measure.*;
 import ij.plugin.*;
 import ij.plugin.frame.Recorder;
 import ij.plugin.frame.RoiManager;
-import ij.plugin.filter.Analyzer;
 import ij.plugin.filter.ThresholdToSelection;
 import ij.macro.Interpreter;
-import ij.io.RoiDecoder;
 import java.awt.*;
 import java.util.*;
 import java.io.*;
@@ -923,6 +921,35 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 		oldWidth = width;
 		oldHeight = height;
 	}
+        
+        private void manageActivationHandler(int x2, int y2, int xc, int yc) {
+            switch (activeHandle) {
+                    case 0:
+                        x=x2-width;
+                        y=y2-height;
+                        break;
+                case 1:
+                        x=xc-width/2;
+                        y=y2-height;
+                        break;
+                case 2:
+                        y=y2-height;
+                        break;
+                case 3:
+                        y=yc-height/2;
+                        break;
+                case 5:
+                        x=xc-width/2;
+                        break;
+                case 6:
+                        x=x2-width;
+                        break;
+                case 7:
+                        y=yc-height/2;
+                        x=x2-width;
+                        break;
+            }
+        }
 
 	protected void moveHandle(int sx, int sy) {
 		double asp;
@@ -974,42 +1001,7 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 		   {height=1; y=y2;}
 
 		if (center) {
-			switch (activeHandle){
-				case 0:
-					width=(xc-x)*2;
-					height=(yc-y)*2;
-					break;
-				case 1:
-					height=(yc-y)*2;
-					break;
-				case 2:
-					width=(x2-xc)*2;
-					x=x2-width;
-					height=(yc-y)*2;
-					break;
-				case 3:
-					width=(x2-xc)*2;
-					x=x2-width;
-					break;
-				case 4:
-					width=(x2-xc)*2;
-					x=x2-width;
-					height=(y2-yc)*2;
-					y=y2-height;
-					break;
-				case 5:
-					height=(y2-yc)*2;
-					y=y2-height;
-					break;
-				case 6:
-					width=(xc-x)*2;
-					height=(y2-yc)*2;
-					y=y2-height;
-					break;
-				case 7:
-					width=(xc-x)*2;
-					break;
-			}
+			this.manageActivationHandler(x2, y2, xc, yc);
 			if (x>=x2) {
 				width=1;
 				x=x2=xc;
@@ -1071,32 +1063,7 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 			if (activeHandle==1 || activeHandle==5) width=(int)Math.rint((double)height*asp);
 			else height=(int)Math.rint((double)width/asp);
 
-			switch (activeHandle){
-				case 0:
-					x=x2-width;
-					y=y2-height;
-					break;
-				case 1:
-					x=xc-width/2;
-					y=y2-height;
-					break;
-				case 2:
-					y=y2-height;
-					break;
-				case 3:
-					y=yc-height/2;
-					break;
-				case 5:
-					x=xc-width/2;
-					break;
-				case 6:
-					x=x2-width;
-					break;
-				case 7:
-					y=yc-height/2;
-					x=x2-width;
-					break;
-			}
+			this.manageActivationHandler(x2, y2, xc, yc);
 			if (center) {
 				x=xc-width/2;
 				y=yc-height/2;
