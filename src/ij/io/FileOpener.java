@@ -470,7 +470,7 @@ public class FileOpener {
 			if (channels==0) channels = 1;
 			if (slices==0) slices = 1;
 			if (frames==0) frames = 1;
-			//IJ.log("setCalibration: "+channels+"  "+slices+"  "+frames);
+
 			if (channels*slices*frames==stackSize) {
 				imp.setDimensions(channels, slices, frames);
 				if (getBoolean(props, "hyperstack"))

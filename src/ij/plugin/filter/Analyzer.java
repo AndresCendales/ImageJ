@@ -1,6 +1,5 @@
 package ij.plugin.filter;
 import java.awt.*;
-import java.util.Vector;
 import java.util.Properties;
 import ij.*;
 import ij.gui.*;
@@ -8,9 +7,7 @@ import ij.process.*;
 import ij.measure.*;
 import ij.text.*;
 import ij.plugin.MeasurementsWriter;
-import ij.plugin.Straightener;
 import ij.plugin.frame.RoiManager;
-import ij.util.Tools;
 import ij.macro.Interpreter;
 
 /** This plugin implements ImageJ's Analyze/Measure and Analyze/Set Measurements commands. */
@@ -279,20 +276,6 @@ public class Analyzer implements PlugInFilter, Measurements {
 			reset();
 		saveResults(stats, roi);
 	}
-		
-	/*
-	void showHeadings() {
-		String[] headings = rt.getHeadings();
-		int columns = headings.length;
-		if (columns==0)
-			return;
-		IJ.log("Headings: "+headings.length+" "+rt.getColumnHeading(ResultsTable.LAST_HEADING));
-		for (int i=0; i<columns; i++) {
-			if (headings[i]!=null)
-				IJ.log("   "+i+" "+headings[i]+" "+rt.getColumnIndex(headings[i]));
-		}
-	}
-	*/
 	
 	boolean reset() {
 		boolean ok = true;
@@ -307,21 +290,6 @@ public class Analyzer implements PlugInFilter, Measurements {
 		popup menu of the Analyze/Set Measurements dialog box. */
 	public static boolean isRedirectImage() {
 		return redirectTarget!=0;
-	}
-	
-	/** Set the "Redirect To" image. Pass 'null' as the 
-	    argument to disable redirected sampling. */
-	public static void setRedirectImage(ImagePlus imp) {
-		if (imp==null) {
-			redirectTarget = 0;
-			redirectTitle = null;
-			redirectImage = null;
-		} else {
-			redirectTarget = imp.getID();
-			redirectTitle = imp.getTitle();
-			if (imp.getWindow()==null)
-				redirectImage = imp;
-		}
 	}
 	
 	private ImagePlus getRedirectImageOrStack(ImagePlus cimp) {
@@ -532,45 +500,29 @@ public class Analyzer implements PlugInFilter, Measurements {
 		return ip;
 	}
 
-	
-	/** Saves the measurements specified in the "Set Measurements" dialog,
-		or by calling setMeasurements(), in the default results table.
-	*/
-	public void saveResults(ImageStatistics stats, Roi roi) {
-		if (rt.getColumnHeading(ResultsTable.LAST_HEADING)==null)
-			reset();
-		clearSummary();
-		incrementCounter();
-		int counter = rt.size();
-		if (counter<=MAX_STANDARDS && !(stats.umean==0.0&&counter==1&&umeans!=null && umeans[0]!=0f)) {
-			if (umeans==null) umeans = new float[MAX_STANDARDS];
-			umeans[counter-1] = (float)stats.umean;
-		}
-		if ((measurements&LABELS)!=0)
-			rt.addLabel("Label", getFileName());
-		if ((measurements&AREA)!=0) rt.addValue(ResultsTable.AREA,stats.area);
-		if ((measurements&MEAN)!=0) rt.addValue(ResultsTable.MEAN,stats.mean);
-		if ((measurements&STD_DEV)!=0) rt.addValue(ResultsTable.STD_DEV,stats.stdDev);
-		if ((measurements&MODE)!=0) rt.addValue(ResultsTable.MODE, stats.dmode);
-		if ((measurements&MIN_MAX)!=0) {
-			if (showMin) rt.addValue(ResultsTable.MIN,stats.min);
-			rt.addValue(ResultsTable.MAX,stats.max);
-		}
+
+	public void measurementsCentroid(ImageStatistics stats){
 		if ((measurements&CENTROID)!=0) {
 			rt.addValue(ResultsTable.X_CENTROID,stats.xCentroid);
 			rt.addValue(ResultsTable.Y_CENTROID,stats.yCentroid);
 		}
+	}
+
+	public void measurementsCenterOfMass(ImageStatistics stats){
 		if ((measurements&CENTER_OF_MASS)!=0) {
 			rt.addValue(ResultsTable.X_CENTER_OF_MASS,stats.xCenterOfMass);
 			rt.addValue(ResultsTable.Y_CENTER_OF_MASS,stats.yCenterOfMass);
 		}
+	}
+
+	public void measurementsPerimeter(ImageStatistics stats, Roi roi){
 		if ((measurements&PERIMETER)!=0 || (measurements&SHAPE_DESCRIPTORS)!=0) {
 			double perimeter;
 			if (roi!=null)
 				perimeter = roi.getLength();
 			else
 				perimeter = imp!=null?imp.getWidth()*2+imp.getHeight()*2:0.0;
-			if ((measurements&PERIMETER)!=0) 
+			if ((measurements&PERIMETER)!=0)
 				rt.addValue(ResultsTable.PERIMETER,perimeter);
 			if ((measurements&SHAPE_DESCRIPTORS)!=0) {
 				double circularity = perimeter==0.0?0.0:4.0*Math.PI*(stats.area/(perimeter*perimeter));
@@ -588,9 +540,11 @@ public class Analyzer implements PlugInFilter, Measurements {
 					rt.setDecimalPlaces(ResultsTable.ROUNDNESS, precision);
 					rt.setDecimalPlaces(ResultsTable.SOLIDITY, precision);
 				}
-				//rt.addValue(ResultsTable.CONVEXITY, getConvexPerimeter(roi, ch)/perimeter);
 			}
 		}
+	}
+
+	public void measurementsRect(ImageStatistics stats, Roi roi){
 		if ((measurements&RECT)!=0) {
 			if (roi!=null && roi.isLine()) {
 				Rectangle bounds = roi.getBounds();
@@ -616,15 +570,21 @@ public class Analyzer implements PlugInFilter, Measurements {
 				rt.addValue(ResultsTable.ROI_HEIGHT,stats.roiHeight);
 			}
 		}
+	}
+
+	public void measurementsElipse(ImageStatistics stats){
 		if ((measurements&ELLIPSE)!=0) {
 			rt.addValue(ResultsTable.MAJOR,stats.major);
 			rt.addValue(ResultsTable.MINOR,stats.minor);
 			rt.addValue(ResultsTable.ANGLE,stats.angle);
 		}
+	}
+
+	public void measurementsFeret(Roi roi){
 		if ((measurements&FERET)!=0) {
 			boolean extras = true;
 			double FeretDiameter=Double.NaN, feretAngle=Double.NaN, minFeret=Double.NaN,
-				feretX=Double.NaN, feretY=Double.NaN;
+					feretX=Double.NaN, feretY=Double.NaN;
 			Roi roi2 = roi;
 			if (roi2==null && imp!=null)
 				roi2 = new Roi(0, 0, imp.getWidth(), imp.getHeight());
@@ -644,14 +604,24 @@ public class Analyzer implements PlugInFilter, Measurements {
 			rt.addValue(ResultsTable.FERET_ANGLE, feretAngle);
 			rt.addValue(ResultsTable.MIN_FERET, minFeret);
 		}
+	}
+
+	public void measurementsMinMax(ImageStatistics stats){
+		if ((measurements&MIN_MAX)!=0) {
+			if (showMin) rt.addValue(ResultsTable.MIN,stats.min);
+			rt.addValue(ResultsTable.MAX,stats.max);
+		}
+	}
+
+
+	public void measurementsIntegratedDensity(ImageStatistics stats){
 		if ((measurements&INTEGRATED_DENSITY)!=0) {
 			rt.addValue(ResultsTable.INTEGRATED_DENSITY,stats.area*stats.mean);
 			rt.addValue(ResultsTable.RAW_INTEGRATED_DENSITY,stats.pixelCount*stats.umean);
 		}
-		if ((measurements&MEDIAN)!=0) rt.addValue(ResultsTable.MEDIAN, stats.median);
-		if ((measurements&SKEWNESS)!=0) rt.addValue(ResultsTable.SKEWNESS, stats.skewness);
-		if ((measurements&KURTOSIS)!=0) rt.addValue(ResultsTable.KURTOSIS, stats.kurtosis);
-		if ((measurements&AREA_FRACTION)!=0) rt.addValue(ResultsTable.AREA_FRACTION, stats.areaFraction);
+	}
+
+	public void measurementsStackPosition(Roi roi){
 		if ((measurements&STACK_POSITION)!=0) {
 			boolean update = false;
 			if (imp!=null && (imp.isHyperStack()||imp.isComposite())) {
@@ -679,6 +649,42 @@ public class Analyzer implements PlugInFilter, Measurements {
 			if (update && rt==systemRT && IJ.isResultsWindow())
 				rt.update(measurements, imp, roi);
 		}
+	}
+
+	/** Saves the measurements specified in the "Set Measurements" dialog,
+		or by calling setMeasurements(), in the default results table.
+	*/
+	public void saveResults(ImageStatistics stats, Roi roi) {
+		if (rt.getColumnHeading(ResultsTable.LAST_HEADING)==null)
+			reset();
+		clearSummary();
+		incrementCounter();
+		int counter = rt.size();
+		if (counter<=MAX_STANDARDS && !(stats.umean==0.0&&counter==1&&umeans!=null && umeans[0]!=0f)) {
+			if (umeans==null) umeans = new float[MAX_STANDARDS];
+			umeans[counter-1] = (float)stats.umean;
+		}
+		if ((measurements&LABELS)!=0)
+			rt.addLabel("Label", getFileName());
+		if ((measurements&AREA)!=0) rt.addValue(ResultsTable.AREA,stats.area);
+		if ((measurements&MEAN)!=0) rt.addValue(ResultsTable.MEAN,stats.mean);
+		if ((measurements&STD_DEV)!=0) rt.addValue(ResultsTable.STD_DEV,stats.stdDev);
+		if ((measurements&MODE)!=0) rt.addValue(ResultsTable.MODE, stats.dmode);
+		if ((measurements&MEDIAN)!=0) rt.addValue(ResultsTable.MEDIAN, stats.median);
+		if ((measurements&SKEWNESS)!=0) rt.addValue(ResultsTable.SKEWNESS, stats.skewness);
+		if ((measurements&KURTOSIS)!=0) rt.addValue(ResultsTable.KURTOSIS, stats.kurtosis);
+		if ((measurements&AREA_FRACTION)!=0) rt.addValue(ResultsTable.AREA_FRACTION, stats.areaFraction);
+
+		this.measurementsMinMax(stats);
+		this.measurementsCentroid(stats);
+		this.measurementsCenterOfMass(stats);
+		this.measurementsPerimeter(stats, roi);
+		this.measurementsRect(stats, roi);
+		this.measurementsElipse(stats);
+		this.measurementsFeret(roi);
+		this.measurementsIntegratedDensity(stats);
+		this.measurementsStackPosition(roi);
+
 		if (roi!=null) {
 			if (roi.isLine()) {
 				rt.addValue("Length", roi.getLength());

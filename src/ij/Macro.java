@@ -40,24 +40,28 @@ public class Macro {
 			return fs.saveAsTiff(path);
 	}
 
-	public static String getName(String path) {
-		int i = path.lastIndexOf('/');
-		if (i==-1)
-			i = path.lastIndexOf('\\');
+	public String getName(String path) {
+		//Get Directory
+		int i = this.getDirectoryIndex(path);
+
 		if (i>0)
 			return path.substring(i+1);
 		else
 			return path;
 	}
-	
-	public static String getDir(String path) {
-		int i = path.lastIndexOf('/');
-		if (i==-1)
-			i = path.lastIndexOf('\\');
+	public String getDir(String path) {
+		int i = this.getDirectoryIndex(path);
 		if (i>0)
 			return path.substring(0, i+1);
 		else
 			return "";
+	}
+
+	private int getDirectoryIndex(String path) {
+		int i = path.lastIndexOf('/');
+		if (i==-1)
+			i = path.lastIndexOf('\\');
+		return i;
 	}
 	
 	/** Aborts the currently running macro or any plugin using IJ.run(). */
