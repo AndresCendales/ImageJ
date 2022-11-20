@@ -5,7 +5,6 @@ import ij.process.*;
 import ij.gui.GenericDialog;
 import ij.util.ThreadUtil;
 import ij.plugin.RGBStackMerge;
-import ij.gui.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /*
