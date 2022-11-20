@@ -459,9 +459,10 @@ public class Menus {
 		int index;
  		Menu submenu=new Menu(name.replace('_', ' '));
 		index = key.indexOf(' ');
-		if (index>0)
+		if (index>0) {
 			key = key.substring(0, index);
- 		for (int count=1; count<100; count++) {
+		}
+		for (int count=1; count<100; count++) {
 			value = Prefs.getString(key + (count/10)%10 + count%10);
 			if (value==null)
 				break;
@@ -969,7 +970,11 @@ public class Menus {
 		else
     		return new ByteArrayInputStream(sb.toString().getBytes());
 	}
-	
+
+
+
+
+
 	/** Returns a list of the plugins with directory names removed. */
 	String[] getStrippedPlugins(String[] plugins) {
 		String[] plugins2 = new String[plugins.length];

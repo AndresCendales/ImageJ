@@ -608,7 +608,6 @@ public class Opener {
 					if (len<0) break;
 					out.write(buf, 0, len);
 					byteCount += len;
-					//IJ.showProgress((double)(byteCount%fileSize)/fileSize);
 				}
 				byte[] bytes = out.toByteArray();
 				out.close();
@@ -776,10 +775,6 @@ public class Opener {
 		}
 		if (contiguous &&  info[0].fileType!=FileInfo.RGB48)
 			info[0].nImages = info.length;
-		//if (IJ.debugMode) {
-		//	IJ.log("sameSizeAndType: " + sameSizeAndType);
-		//	IJ.log("contiguous: " + contiguous);
-		//}
 		return sameSizeAndType;
 	}
 	

@@ -369,8 +369,6 @@ public class Prefs {
 		String path = Menus.getImageJPath();
 		if (path==null) {
 			String ijPath = getPluginsDirProperty();
-			//if (ijPath==null)
-			//	ijPath = ImageJDir;
 			if (ijPath==null)
 				ijPath = System.getProperty("user.dir");
 			return ijPath + File.separator;
